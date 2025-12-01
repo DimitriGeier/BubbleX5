@@ -1,5 +1,7 @@
 import RealityKit
 import Foundation
+import SwiftUI
+import Combine
 
 @MainActor
 class BubbleSpawner: ObservableObject {

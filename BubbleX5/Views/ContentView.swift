@@ -77,7 +77,7 @@ struct ImmersiveSpaceView: View {
 
                 print("✅ All systems registered")
 
-                let worldAnchor = AnchorEntity(.world(transform: .identity))
+                let worldAnchor = AnchorEntity(world: .zero)
                 worldAnchor.name = "WorldOrigin"
                 content.add(worldAnchor)
 

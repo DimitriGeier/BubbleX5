@@ -1,5 +1,6 @@
 import UIKit
 import CoreHaptics
+import Combine
 
 @MainActor
 class HapticFeedbackManager: ObservableObject {

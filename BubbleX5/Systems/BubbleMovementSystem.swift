@@ -1,4 +1,5 @@
 import RealityKit
+import Foundation
 
 struct BubbleMovementSystem: System {
 
