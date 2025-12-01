@@ -61,6 +61,7 @@ struct ContentView: View {
 struct ImmersiveSpaceView: View {
     @StateObject private var spawner = BubbleSpawner()
     @StateObject private var hapticManager = HapticFeedbackManager()
+    @StateObject private var debugViewModel = DebugViewModel()
     @State private var rootEntity: Entity?
     @State private var showDebugOverlay = true
     @State private var entityCount = 0
@@ -128,6 +129,8 @@ struct ImmersiveSpaceView: View {
             } update: { content in
                 guard let root = rootEntity else { return }
 
+                debugViewModel.updateFrame()
+
                 let now = timeline.date
                 let deltaTime: Float
                 if let last = lastUpdateTime {
@@ -138,7 +141,12 @@ struct ImmersiveSpaceView: View {
 
                 DispatchQueue.main.async {
                     lastUpdateTime = now
+                    entityCount = root.children.count
+                    debugViewModel.entityCount = entityCount
+                    debugViewModel.updateBatteryLevel()
                 }
+
+                guard !debugViewModel.isPaused else { return }
 
                 for entity in root.children {
                     guard let entity = entity as? BubbleEntity else { continue }
@@ -180,7 +188,7 @@ struct ImmersiveSpaceView: View {
 
                     entity.components[BubbleMovementComponent.self] = movement
 
-                    if !isBeingDragged, var orbit = entity.components[OrbitComponent.self] {
+                    if !debugViewModel.reducedMotion && !isBeingDragged, var orbit = entity.components[OrbitComponent.self] {
                         orbit.angle += orbit.speed * deltaTime
 
                         let newX = orbit.center.x + orbit.radius * cos(orbit.angle)
@@ -197,10 +205,8 @@ struct ImmersiveSpaceView: View {
             VStack {
                 HStack {
                     Spacer()
-                    if showDebugOverlay {
-                        ARDebugOverlay()
-                            .padding()
-                    }
+                    VolumetricDebugPanel(viewModel: debugViewModel)
+                        .padding()
                 }
                 Spacer()
             }
