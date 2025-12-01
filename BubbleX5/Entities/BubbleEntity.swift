@@ -76,7 +76,7 @@ class BubbleEntity: Entity, @unchecked Sendable {
         container.name = "TextRingContainer"
 
         let orbitRadius = radius + 0.15
-        let characters = Array(tweetText.prefix(50))
+        let characters = Array(tweetText.prefix(50).reversed())
 
         guard !characters.isEmpty else { return container }
 
