@@ -1,14 +1,17 @@
 import Foundation
+import Combine
 
 @MainActor
 class XAPIClient: ObservableObject {
     static let shared = XAPIClient()
 
+    let objectWillChange = PassthroughSubject<Void, Never>()
+
     private let keychainManager = KeychainManager.shared
     private let baseURL = "https://api.x.com/2"
     private let grokURL = "https://api.x.ai/v1/chat/completions"
 
-    private let cache = NSCache<NSString, CachedResponse>()
+    private let cache = NSCache<NSString, AnyObject>()
     private let cacheExpiration: TimeInterval = 300
 
     private var rateLimitRetryCount: [String: Int] = [:]
@@ -45,7 +48,7 @@ class XAPIClient: ObservableObject {
     func fetchHomeTimeline(maxResults: Int = 10, paginationToken: String? = nil) async throws -> XTimelineResponse {
         let cacheKey = "timeline_\(maxResults)_\(paginationToken ?? "initial")" as NSString
 
-        if let cached = cache.object(forKey: cacheKey),
+        if let cached = cache.object(forKey: cacheKey) as? CachedResponse,
            Date().timeIntervalSince(cached.timestamp) < cacheExpiration {
             print("📦 Returning cached timeline")
             return cached.response
@@ -153,7 +156,7 @@ class XAPIClient: ObservableObject {
             let suggestion = parseGrokResponse(content)
 
             let cached = CachedGrokResponse(suggestion: suggestion, timestamp: Date())
-            cache.setObject(cached as AnyObject, forKey: cacheKey)
+            cache.setObject(cached, forKey: cacheKey)
 
             print("✅ Grok summarized tweet with \(suggestion.queries.count) queries")
             return suggestion
