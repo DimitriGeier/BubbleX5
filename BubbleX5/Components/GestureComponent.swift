@@ -107,7 +107,7 @@ extension GestureComponent {
             axis: RotationAxis3D(x: -rotation.axis.x, y: rotation.axis.y, z: -rotation.axis.z)
         )
         let newOrientation = state.startOrientation.rotated(by: flippedRotation)
-        entity.setOrientation(.init(newOrientation), relativeTo: nil)
+        entity.setOrientation(newOrientation, relativeTo: nil)
     }
 
     func onRotateEnded(value: EntityTargetValue<RotateGesture3D.Value>) {
