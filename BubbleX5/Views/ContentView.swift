@@ -58,41 +58,44 @@ struct ContentView: View {
 }
 
 struct ImmersiveSpaceView: View {
-    @State private var bubbleEntities: [BubbleEntity] = []
-
     var body: some View {
         RealityView { content in
+            print("🔵 RealityView content closure started")
+
+            BuoyancySystem.registerSystem()
+            OrbitSystem.registerSystem()
+            GestureSystem.registerSystem()
+
+            print("✅ Systems registered")
+
             let rootEntity = Entity()
+            rootEntity.name = "BubbleXRoot"
             content.add(rootEntity)
 
-            await initializeBubbleSystem(root: rootEntity)
+            let pointLight = PointLight()
+            pointLight.light.intensity = 1000
+            pointLight.light.attenuationRadius = 5.0
+            pointLight.position = [0, 0.5, -0.5]
+            rootEntity.addChild(pointLight)
 
-            if let ibl = try? await EnvironmentResource(named: "ImageBasedLight") {
-                let iblComponent = ImageBasedLightComponent(
-                    source: .single(ibl),
-                    intensityExponent: 1.0
-                )
-                rootEntity.components[ImageBasedLightComponent.self] = iblComponent
+            print("💡 Light added")
+
+            Task {
+                print("🔄 Creating bubbles...")
+                for i in 0..<BubbleXConstants.Scene.defaultBubbleCount {
+                    let bubble = await BubbleEntity.create(
+                        position: .randomInZone(
+                            min: BubbleXConstants.Scene.spawnZoneMin,
+                            max: BubbleXConstants.Scene.spawnZoneMax
+                        ),
+                        radius: Float.random(in: BubbleXConstants.Bubble.minRadius...BubbleXConstants.Bubble.maxRadius),
+                        tweetText: "Sample tweet \(i + 1)"
+                    )
+                    print("  ✅ Bubble \(i + 1) created at \(bubble.position)")
+                    rootEntity.addChild(bubble)
+                }
+                print("🎉 All \(BubbleXConstants.Scene.defaultBubbleCount) bubbles created!")
             }
-        }
-    }
-
-    private func initializeBubbleSystem(root: Entity) async {
-        BuoyancySystem.registerSystem()
-        OrbitSystem.registerSystem()
-        GestureSystem.registerSystem()
-
-        for i in 0..<BubbleXConstants.Scene.defaultBubbleCount {
-            let bubble = await BubbleEntity.create(
-                position: .randomInZone(
-                    min: BubbleXConstants.Scene.spawnZoneMin,
-                    max: BubbleXConstants.Scene.spawnZoneMax
-                ),
-                radius: Float.random(in: BubbleXConstants.Bubble.minRadius...BubbleXConstants.Bubble.maxRadius),
-                tweetText: "Sample tweet \(i + 1)"
-            )
-            root.addChild(bubble)
-            bubbleEntities.append(bubble)
         }
     }
 }
