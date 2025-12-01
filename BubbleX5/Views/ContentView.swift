@@ -207,9 +207,11 @@ struct ImmersiveSpaceView: View {
                     Spacer()
                     VolumetricDebugPanel(viewModel: debugViewModel)
                         .padding()
+                        .allowsHitTesting(true)
                 }
                 Spacer()
             }
+            .allowsHitTesting(true)
             }
             .onDisappear {
                 spawner.stopSpawning()

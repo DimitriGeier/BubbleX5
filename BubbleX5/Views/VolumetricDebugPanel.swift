@@ -7,9 +7,15 @@ struct VolumetricDebugPanel: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("Debug Panel")
-                .font(.title2)
-                .fontWeight(.bold)
+            HStack {
+                Image(systemName: "hand.draw.fill")
+                    .foregroundStyle(.secondary)
+                    .font(.caption)
+                Text("Debug Panel")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                Spacer()
+            }
 
             VStack(spacing: 12) {
                 HStack {
@@ -70,8 +76,9 @@ struct VolumetricDebugPanel: View {
         .frame(width: 320)
         .background(.ultraThinMaterial)
         .cornerRadius(24)
+        .shadow(color: .black.opacity(0.3), radius: 20)
         .offset(dragOffset)
-        .gesture(
+        .highPriorityGesture(
             DragGesture()
                 .onChanged { value in
                     dragOffset = CGSize(
@@ -83,6 +90,7 @@ struct VolumetricDebugPanel: View {
                     previousDragValue = dragOffset
                 }
         )
+        .zIndex(1000)
         .sheet(isPresented: $viewModel.showNiceList) {
             TweetListView(isNice: true, viewModel: viewModel)
         }
