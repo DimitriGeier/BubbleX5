@@ -57,7 +57,7 @@ struct GestureSystem: System {
 extension GestureSystem {
     static func registerSystem() {
         GestureSystemComponent.registerComponent()
-        Self.registerSystem()
+        SystemRegistration.register(GestureSystem.self)
     }
 }
 

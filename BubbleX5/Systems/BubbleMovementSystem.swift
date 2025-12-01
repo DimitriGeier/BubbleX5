@@ -49,7 +49,7 @@ struct BubbleMovementSystem: System {
 extension BubbleMovementSystem {
     static func registerSystem() {
         BubbleMovementSystemComponent.registerComponent()
-        Self.registerSystem()
+        SystemRegistration.register(BubbleMovementSystem.self)
     }
 }
 

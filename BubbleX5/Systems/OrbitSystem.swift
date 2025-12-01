@@ -28,7 +28,7 @@ struct OrbitSystem: System {
 extension OrbitSystem {
     static func registerSystem() {
         OrbitSystemComponent.registerComponent()
-        Self.registerSystem()
+        SystemRegistration.register(OrbitSystem.self)
     }
 }
 

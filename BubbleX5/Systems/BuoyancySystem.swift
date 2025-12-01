@@ -28,7 +28,7 @@ struct BuoyancySystem: System {
 extension BuoyancySystem {
     static func registerSystem() {
         BuoyancySystemComponent.registerComponent()
-        Self.registerSystem()
+        SystemRegistration.register(BuoyancySystem.self)
     }
 }
 

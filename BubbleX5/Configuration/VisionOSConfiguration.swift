@@ -7,13 +7,16 @@ enum VisionOSVersion {
     case unknown
 
     static var current: VisionOSVersion {
-        if #available(visionOS 3.0, *) {
+        let info = ProcessInfo.processInfo
+        // Check for visionOS 3.0 or later
+        if info.isOperatingSystemAtLeast(OperatingSystemVersion(majorVersion: 3, minorVersion: 0, patchVersion: 0)) {
             return .v3
-        } else if #available(visionOS 2.0, *) {
-            return .v2
-        } else {
-            return .unknown
         }
+        // Check for visionOS 2.0 or later
+        if info.isOperatingSystemAtLeast(OperatingSystemVersion(majorVersion: 2, minorVersion: 0, patchVersion: 0)) {
+            return .v2
+        }
+        return .unknown
     }
 }
 
@@ -23,9 +26,7 @@ struct VisionOSConfiguration {
     static let targetVersion = "3.0"
 
     static var isVisionOS3Available: Bool {
-        if #available(visionOS 3.0, *) {
-            return true
-        }
+        if #available(visionOS 3.0, *) { return true }
         return false
     }
 
