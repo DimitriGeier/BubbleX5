@@ -70,12 +70,12 @@ struct ImmersiveSpaceView: View {
             RealityView { content in
                 print("🔵 RealityView initializing...")
 
-                BuoyancySystem.registerSystem()
-                OrbitSystem.registerSystem()
-                GestureSystem.registerSystem()
-                BubbleMovementSystem.registerSystem()
+                BubbleMovementComponent.registerComponent()
+                OrbitComponent.registerComponent()
+                BuoyancyComponent.registerComponent()
+                DraggableComponent.registerComponent()
 
-                print("✅ All systems registered")
+                print("✅ All components registered")
 
                 let worldAnchor = AnchorEntity(world: .zero)
                 worldAnchor.name = "WorldOrigin"
@@ -106,6 +106,57 @@ struct ImmersiveSpaceView: View {
 
                     await spawner.startSpawning(userPosition: userPosition)
                     print("🎬 Bubble spawning started")
+                }
+            } update: { content in
+                guard let root = rootEntity else { return }
+
+                let deltaTime: Float = 1.0 / 60.0
+
+                for entity in root.children {
+                    guard let entity = entity as? BubbleEntity else { continue }
+                    guard var movement = entity.components[BubbleMovementComponent.self] else { continue }
+
+                    if movement.isApproaching && !movement.hasReachedOrbit {
+                        let direction = movement.targetPosition - entity.position
+                        let distance = length(direction)
+
+                        if distance > 2.0 {
+                            let normalizedDirection = normalize(direction)
+                            entity.position += normalizedDirection * movement.speed * deltaTime
+                        } else {
+                            movement.isApproaching = false
+                            movement.hasReachedOrbit = true
+
+                            let orbitCenter = movement.targetPosition
+                            let orbitRadius: Float = 2.0
+                            let orbitSpeed: Float = (2.0 * .pi) / 15.0
+
+                            let startAngle = atan2(entity.position.z - orbitCenter.z, entity.position.x - orbitCenter.x)
+
+                            let orbitComponent = OrbitComponent(
+                                center: orbitCenter,
+                                radius: orbitRadius,
+                                speed: orbitSpeed,
+                                angle: startAngle
+                            )
+                            entity.components.set(orbitComponent)
+
+                            NotificationCenter.default.post(name: .bubbleEnteredOrbit, object: nil)
+                        }
+                    }
+
+                    entity.components[BubbleMovementComponent.self] = movement
+
+                    if var orbit = entity.components[OrbitComponent.self] {
+                        orbit.angle += orbit.speed * deltaTime
+
+                        let newX = orbit.center.x + orbit.radius * cos(orbit.angle)
+                        let newZ = orbit.center.z + orbit.radius * sin(orbit.angle)
+
+                        entity.position = SIMD3<Float>(newX, orbit.center.y, newZ)
+
+                        entity.components[OrbitComponent.self] = orbit
+                    }
                 }
             }
 

@@ -9,8 +9,9 @@ struct BubbleMovementSystem: System {
 
     func update(context: SceneUpdateContext) {
         let deltaTime = Float(context.deltaTime)
+        let entities = context.entities(matching: Self.query, updatingSystemWhen: .rendering)
 
-        for entity in context.entities(matching: Self.query, updatingSystemWhen: .rendering) {
+        for entity in entities {
             guard var movement = entity.components[BubbleMovementComponent.self] else { continue }
 
             if movement.isApproaching && !movement.hasReachedOrbit {
