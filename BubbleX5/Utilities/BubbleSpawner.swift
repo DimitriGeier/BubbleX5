@@ -92,6 +92,7 @@ class BubbleSpawner: ObservableObject {
     }
 
     deinit {
-        stopSpawning()
+        spawnTimer?.invalidate()
+        spawnTimer = nil
     }
 }
