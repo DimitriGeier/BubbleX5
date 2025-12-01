@@ -49,10 +49,10 @@ class BubbleEntity: Entity, @unchecked Sendable {
         )
         bubble.components.set(modelComponent)
 
-        let collision = CollisionComponent(shapes: [.generateSphere(radius: radius)])
+        let collision = CollisionComponent(shapes: [.generateSphere(radius: radius * 1.2)])
         bubble.components.set(collision)
 
-        let input = InputTargetComponent(allowedInputTypes: .indirect)
+        let input = InputTargetComponent(allowedInputTypes: [.direct, .indirect])
         bubble.components.set(input)
 
         let buoyancy = BuoyancyComponent(

@@ -145,9 +145,11 @@ struct ImmersiveSpaceView: View {
 
                     entity.updateTextOrbit(deltaTime: deltaTime)
 
+                    let isBeingDragged = EntityGestureState.shared.targetedEntity == entity
+
                     guard var movement = entity.components[BubbleMovementComponent.self] else { continue }
 
-                    if movement.isApproaching && !movement.hasReachedOrbit {
+                    if !isBeingDragged && movement.isApproaching && !movement.hasReachedOrbit {
                         let direction = movement.targetPosition - entity.position
                         let distance = length(direction)
 
@@ -178,7 +180,7 @@ struct ImmersiveSpaceView: View {
 
                     entity.components[BubbleMovementComponent.self] = movement
 
-                    if var orbit = entity.components[OrbitComponent.self] {
+                    if !isBeingDragged, var orbit = entity.components[OrbitComponent.self] {
                         orbit.angle += orbit.speed * deltaTime
 
                         let newX = orbit.center.x + orbit.radius * cos(orbit.angle)
