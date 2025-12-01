@@ -16,16 +16,25 @@ class BubbleSpawner: ObservableObject {
     var onBubbleCreated: ((BubbleEntity) -> Void)?
 
     func startSpawning(userPosition: SIMD3<Float>) async {
-        guard !isSpawning else { return }
+        print("🚀 [BubbleSpawner] startSpawning called")
+        print("   isSpawning: \(isSpawning)")
+
+        guard !isSpawning else {
+            print("⚠️ [BubbleSpawner] Already spawning, returning")
+            return
+        }
         isSpawning = true
+        print("✅ [BubbleSpawner] isSpawning set to true")
 
         await loadTweets()
+        print("📚 [BubbleSpawner] Tweets loaded, queue size: \(tweetQueue.count)")
 
         spawnTimer = Timer.scheduledTimer(withTimeInterval: spawnInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 await self?.spawnNextBubble(userPosition: userPosition)
             }
         }
+        print("⏰ [BubbleSpawner] Timer scheduled with interval: \(spawnInterval)s")
     }
 
     func stopSpawning() {
@@ -35,34 +44,54 @@ class BubbleSpawner: ObservableObject {
     }
 
     private func loadTweets() async {
+        print("🔄 [BubbleSpawner] loadTweets called")
         do {
+            print("📡 [BubbleSpawner] Calling fetchHomeTimeline...")
             let response = try await xApiClient.fetchHomeTimeline(maxResults: 20)
             tweetQueue = response.data ?? []
-            print("✅ Loaded \(tweetQueue.count) tweets")
+            print("✅ [BubbleSpawner] Loaded \(tweetQueue.count) tweets from API")
+
+            if tweetQueue.isEmpty {
+                print("⚠️ [BubbleSpawner] Response data was empty, using sample data")
+                tweetQueue = generateSampleTweets()
+            } else {
+                for (index, tweet) in tweetQueue.prefix(3).enumerated() {
+                    print("   Tweet \(index + 1): \(tweet.text.prefix(50))...")
+                }
+            }
         } catch {
-            print("⚠️ Failed to load tweets: \(error). Using sample data.")
+            print("❌ [BubbleSpawner] Failed to load tweets: \(error)")
+            print("   Error type: \(type(of: error))")
+            print("   Using sample data as fallback")
             tweetQueue = generateSampleTweets()
         }
     }
 
     private func spawnNextBubble(userPosition: SIMD3<Float>) async {
+        print("🔄 [BubbleSpawner] spawnNextBubble called, queue size: \(tweetQueue.count)")
+
         guard !tweetQueue.isEmpty else {
+            print("⚠️ [BubbleSpawner] Tweet queue empty, reloading...")
             await loadTweets()
             return
         }
 
         let tweet = tweetQueue.removeFirst()
+        print("📝 [BubbleSpawner] Spawning bubble for tweet: \(tweet.text.prefix(50))...")
 
         let spawnPosition = userPosition + SIMD3<Float>(0, 0, -5.0)
+        print("📍 [BubbleSpawner] Spawn position: \(spawnPosition), user position: \(userPosition)")
 
         let bubble = await BubbleEntity.create(
             position: spawnPosition,
             radius: Float.random(in: BubbleXConstants.Bubble.minRadius...BubbleXConstants.Bubble.maxRadius),
             tweetText: tweet.text
         )
+        print("✨ [BubbleSpawner] BubbleEntity created")
 
         let textLabel = bubble.addTextLabel()
         bubble.addChild(textLabel)
+        print("🔤 [BubbleSpawner] Text label added")
 
         let movementComponent = BubbleMovementComponent(
             targetPosition: userPosition,
@@ -71,12 +100,15 @@ class BubbleSpawner: ObservableObject {
         bubble.components.set(movementComponent)
 
         spawnedCount += 1
+        print("📊 [BubbleSpawner] Spawned count: \(spawnedCount)")
 
+        print("🎨 [BubbleSpawner] Calling onBubbleCreated callback...")
         onBubbleCreated?(bubble)
+        print("✅ [BubbleSpawner] Callback completed")
 
         NotificationCenter.default.post(name: .bubbleSpawned, object: nil)
 
-        print("🫧 Spawned bubble #\(spawnedCount) at \(spawnPosition) -> target: \(userPosition)")
+        print("🫧 [BubbleSpawner] Bubble #\(spawnedCount) fully spawned")
         print("   Distance to target: \(length(userPosition - spawnPosition))")
     }
 

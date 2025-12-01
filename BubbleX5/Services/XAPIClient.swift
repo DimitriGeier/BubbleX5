@@ -46,17 +46,22 @@ class XAPIClient: ObservableObject {
     }
 
     func fetchHomeTimeline(maxResults: Int = 10, paginationToken: String? = nil) async throws -> XTimelineResponse {
+        print("🔍 [XAPIClient] fetchHomeTimeline called with maxResults=\(maxResults)")
+
         let cacheKey = "timeline_\(maxResults)_\(paginationToken ?? "initial")" as NSString
 
         if let cached = cache.object(forKey: cacheKey) as? CachedResponse,
            Date().timeIntervalSince(cached.timestamp) < cacheExpiration {
-            print("📦 Returning cached timeline")
+            print("📦 [XAPIClient] Returning cached timeline with \(cached.response.data?.count ?? 0) tweets")
             return cached.response
         }
 
+        print("🔑 [XAPIClient] Retrieving bearer token from keychain...")
         guard let token = try? keychainManager.retrieve(for: "x_bearer_token") else {
+            print("❌ [XAPIClient] No bearer token found in keychain")
             throw XAPIError.noToken
         }
+        print("✅ [XAPIClient] Token retrieved: \(String(token.prefix(10)))...")
 
         var components = URLComponents(string: "\(baseURL)/tweets/search/recent")
         components?.queryItems = [
@@ -72,46 +77,85 @@ class XAPIClient: ObservableObject {
         }
 
         guard let url = components?.url else {
+            print("❌ [XAPIClient] Invalid URL construction")
             throw XAPIError.invalidURL
         }
+        print("🌐 [XAPIClient] Request URL: \(url.absoluteString)")
 
         var request = URLRequest(url: url)
         request.httpMethod = "GET"
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
+        print("📤 [XAPIClient] Sending request to X API...")
         let response = try await performRequestWithRetry(request: request, endpoint: "timeline")
+        print("📥 [XAPIClient] Received response: \(response.count) bytes")
 
         let decoder = JSONDecoder()
         do {
+            print("🔄 [XAPIClient] Decoding response...")
+
+            if let jsonString = String(data: response, encoding: .utf8) {
+                print("📄 [XAPIClient] Raw response: \(jsonString.prefix(500))...")
+            }
+
             let timelineResponse = try decoder.decode(XTimelineResponse.self, from: response)
+            print("✅ [XAPIClient] Successfully decoded \(timelineResponse.data?.count ?? 0) tweets")
+
+            if let tweets = timelineResponse.data {
+                for (index, tweet) in tweets.prefix(3).enumerated() {
+                    print("   Tweet \(index + 1): \(tweet.text.prefix(50))...")
+                }
+            }
 
             let cached = CachedResponse(response: timelineResponse, timestamp: Date())
             cache.setObject(cached, forKey: cacheKey)
 
-            print("✅ Fetched \(timelineResponse.data?.count ?? 0) tweets")
             return timelineResponse
         } catch {
+            print("❌ [XAPIClient] Decoding error: \(error)")
+            if let decodingError = error as? DecodingError {
+                switch decodingError {
+                case .keyNotFound(let key, let context):
+                    print("   Missing key: \(key.stringValue), context: \(context.debugDescription)")
+                case .typeMismatch(let type, let context):
+                    print("   Type mismatch: \(type), context: \(context.debugDescription)")
+                case .valueNotFound(let type, let context):
+                    print("   Value not found: \(type), context: \(context.debugDescription)")
+                case .dataCorrupted(let context):
+                    print("   Data corrupted: \(context.debugDescription)")
+                @unknown default:
+                    print("   Unknown decoding error")
+                }
+            }
             throw XAPIError.decodingError(error)
         }
     }
 
     func summarizeWithGrok(tweetText: String) async throws -> GrokSuggestion {
+        print("🤖 [XAPIClient] summarizeWithGrok called")
+        print("   Tweet text: \(tweetText.prefix(100))...")
+
         let cacheKey = "grok_\(tweetText.hashValue)" as NSString
 
         if let cached = cache.object(forKey: cacheKey) as? CachedGrokResponse,
            Date().timeIntervalSince(cached.timestamp) < cacheExpiration {
-            print("📦 Returning cached Grok response")
+            print("📦 [XAPIClient] Returning cached Grok response with \(cached.suggestion.queries.count) queries")
             return cached.suggestion
         }
 
+        print("🔑 [XAPIClient] Retrieving X bearer token for Grok API...")
         guard let token = try? keychainManager.retrieve(for: "x_bearer_token") else {
+            print("❌ [XAPIClient] No bearer token found in keychain")
             throw XAPIError.noToken
         }
+        print("✅ [XAPIClient] Token retrieved: \(String(token.prefix(10)))...")
 
         guard let url = URL(string: grokURL) else {
+            print("❌ [XAPIClient] Invalid Grok URL")
             throw XAPIError.invalidURL
         }
+        print("🌐 [XAPIClient] Grok URL: \(url.absoluteString))")
 
         let prompt = """
         Summarize this tweet in one sentence and suggest exactly 3 related search queries.
@@ -143,24 +187,39 @@ class XAPIClient: ObservableObject {
         let encoder = JSONEncoder()
         request.httpBody = try encoder.encode(grokRequest)
 
+        print("📤 [XAPIClient] Sending request to Grok API...")
         let responseData = try await performRequestWithRetry(request: request, endpoint: "grok")
+        print("📥 [XAPIClient] Received Grok response: \(responseData.count) bytes")
 
         let decoder = JSONDecoder()
         do {
-            let grokResponse = try decoder.decode(GrokResponse.self, from: responseData)
+            print("🔄 [XAPIClient] Decoding Grok response...")
 
-            guard let content = grokResponse.choices.first?.message.content else {
-                throw XAPIError.invalidResponse
+            if let jsonString = String(data: responseData, encoding: .utf8) {
+                print("📄 [XAPIClient] Raw Grok response: \(jsonString.prefix(300))...")
             }
 
+            let grokResponse = try decoder.decode(GrokResponse.self, from: responseData)
+            print("✅ [XAPIClient] Successfully decoded Grok response")
+
+            guard let content = grokResponse.choices.first?.message.content else {
+                print("❌ [XAPIClient] No content in Grok response")
+                throw XAPIError.invalidResponse
+            }
+            print("💬 [XAPIClient] Grok content: \(content)")
+
             let suggestion = parseGrokResponse(content)
+            print("✅ [XAPIClient] Parsed \(suggestion.queries.count) queries from Grok response")
+            for (index, query) in suggestion.queries.enumerated() {
+                print("   Query \(index + 1): \(query)")
+            }
 
             let cached = CachedGrokResponse(suggestion: suggestion, timestamp: Date())
             cache.setObject(cached, forKey: cacheKey)
 
-            print("✅ Grok summarized tweet with \(suggestion.queries.count) queries")
             return suggestion
         } catch {
+            print("❌ [XAPIClient] Grok decoding error: \(error)")
             throw XAPIError.decodingError(error)
         }
     }
@@ -191,46 +250,63 @@ class XAPIClient: ObservableObject {
 
     private func performRequestWithRetry(request: URLRequest, endpoint: String) async throws -> Data {
         let retryCount = rateLimitRetryCount[endpoint] ?? 0
+        print("🔄 [XAPIClient] performRequestWithRetry for endpoint '\(endpoint)' (attempt \(retryCount + 1))")
 
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
+            print("📬 [XAPIClient] Received response for '\(endpoint)'")
 
             guard let httpResponse = response as? HTTPURLResponse else {
+                print("❌ [XAPIClient] Invalid HTTP response for '\(endpoint)'")
                 throw XAPIError.invalidResponse
             }
 
+            print("📊 [XAPIClient] HTTP Status Code: \(httpResponse.statusCode)")
+
             switch httpResponse.statusCode {
             case 200...299:
+                print("✅ [XAPIClient] Success for '\(endpoint)' - \(data.count) bytes")
                 rateLimitRetryCount[endpoint] = 0
                 return data
             case 429:
+                print("⚠️ [XAPIClient] Rate limited (429) for '\(endpoint)'")
                 if retryCount < maxRetries {
                     let delay = baseBackoffDelay * pow(2.0, Double(retryCount))
-                    print("⏱️ Rate limited, retrying after \(delay)s")
+                    print("⏱️ [XAPIClient] Rate limited, retrying after \(delay)s")
                     rateLimitRetryCount[endpoint] = retryCount + 1
                     try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
                     return try await performRequestWithRetry(request: request, endpoint: endpoint)
                 } else {
+                    print("❌ [XAPIClient] Max retries exceeded for rate limit")
                     throw XAPIError.rateLimited
                 }
             case 400...499:
+                print("❌ [XAPIClient] Client error \(httpResponse.statusCode) for '\(endpoint)'")
+                if let errorString = String(data: data, encoding: .utf8) {
+                    print("   Error details: \(errorString.prefix(200))")
+                }
                 throw XAPIError.serverError(httpResponse.statusCode)
             case 500...599:
+                print("❌ [XAPIClient] Server error \(httpResponse.statusCode) for '\(endpoint)'")
                 if retryCount < maxRetries {
                     let delay = baseBackoffDelay * pow(2.0, Double(retryCount))
-                    print("⏱️ Server error, retrying after \(delay)s")
+                    print("⏱️ [XAPIClient] Server error, retrying after \(delay)s")
                     rateLimitRetryCount[endpoint] = retryCount + 1
                     try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
                     return try await performRequestWithRetry(request: request, endpoint: endpoint)
                 } else {
+                    print("❌ [XAPIClient] Max retries exceeded for server error")
                     throw XAPIError.serverError(httpResponse.statusCode)
                 }
             default:
+                print("❌ [XAPIClient] Unexpected status code \(httpResponse.statusCode) for '\(endpoint)'")
                 throw XAPIError.serverError(httpResponse.statusCode)
             }
         } catch let error as XAPIError {
+            print("❌ [XAPIClient] XAPIError thrown: \(error)")
             throw error
         } catch {
+            print("❌ [XAPIClient] Network error: \(error.localizedDescription)")
             throw XAPIError.networkError(error)
         }
     }

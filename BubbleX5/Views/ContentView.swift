@@ -103,16 +103,20 @@ struct ImmersiveSpaceView: View {
 
                 Task {
                     let userPosition = SIMD3<Float>(0, 1.6, 0)
+                    print("👤 [ImmersiveSpaceView] User position set to: \(userPosition)")
 
                     spawner.onBubbleCreated = { [weak root] bubble in
+                        print("🫧 [ImmersiveSpaceView] Bubble created callback - adding to root")
                         root?.addChild(bubble)
                         Task { @MainActor in
                             entityCount += 1
+                            print("📊 [ImmersiveSpaceView] Entity count: \(entityCount)")
                         }
                     }
 
+                    print("🚀 [ImmersiveSpaceView] Starting spawner...")
                     await spawner.startSpawning(userPosition: userPosition)
-                    print("🎬 Bubble spawning started")
+                    print("✅ [ImmersiveSpaceView] Bubble spawning started")
 
                     let recognizer = HandGestureRecognizer()
                     gestureRecognizer = recognizer
