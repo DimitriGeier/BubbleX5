@@ -40,6 +40,13 @@ class HapticFeedbackManager: ObservableObject {
             name: .bubbleEnteredOrbit,
             object: nil
         )
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleGestureDetected),
+            name: .gestureDetected,
+            object: nil
+        )
     }
 
     @objc private func handleBubbleSpawned() {
@@ -48,6 +55,10 @@ class HapticFeedbackManager: ObservableObject {
 
     @objc private func handleBubbleEnteredOrbit() {
         playOrbitTransitionHaptic()
+    }
+
+    @objc private func handleGestureDetected() {
+        playGestureHaptic()
     }
 
     func playSpawnHaptic() {
@@ -98,6 +109,27 @@ class HapticFeedbackManager: ObservableObject {
             try player.start(atTime: 0)
         } catch {
             print("❌ Failed to play orbit transition haptic: \(error.localizedDescription)")
+        }
+    }
+
+    func playGestureHaptic() {
+        guard let engine = engine else { return }
+
+        let intensity = CHHapticEventParameter(parameterID: .hapticIntensity, value: 0.8)
+        let sharpness = CHHapticEventParameter(parameterID: .hapticSharpness, value: 0.7)
+
+        let event = CHHapticEvent(
+            eventType: .hapticTransient,
+            parameters: [intensity, sharpness],
+            relativeTime: 0
+        )
+
+        do {
+            let pattern = try CHHapticPattern(events: [event], parameters: [])
+            let player = try engine.makePlayer(with: pattern)
+            try player.start(atTime: 0)
+        } catch {
+            print("❌ Failed to play gesture haptic: \(error.localizedDescription)")
         }
     }
 
