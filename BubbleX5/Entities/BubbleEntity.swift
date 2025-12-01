@@ -63,6 +63,31 @@ class BubbleEntity: Entity, @unchecked Sendable {
         let draggable = DraggableComponent(isDragging: false, dragOffset: .zero)
         bubble.components.set(draggable)
 
+        let billboard = BillboardComponent()
+        bubble.components.set(billboard)
+
         return bubble
+    }
+
+    func addTextLabel() -> Entity {
+        let textEntity = Entity()
+        textEntity.position = [0, radius + 0.05, 0]
+
+        let textMesh = MeshResource.generateText(
+            tweetText,
+            extrusionDepth: 0.01,
+            font: .systemFont(ofSize: 0.05),
+            containerFrame: .zero,
+            alignment: .center,
+            lineBreakMode: .byTruncatingTail
+        )
+
+        var textMaterial = UnlitMaterial()
+        textMaterial.color = .init(tint: .white)
+
+        textEntity.components.set(ModelComponent(mesh: textMesh, materials: [textMaterial]))
+        textEntity.components.set(BillboardComponent())
+
+        return textEntity
     }
 }

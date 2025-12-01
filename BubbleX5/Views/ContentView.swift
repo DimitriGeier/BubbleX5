@@ -1,5 +1,6 @@
 import SwiftUI
 import RealityKit
+import ARKit
 
 struct ContentView: View {
     @Binding var immersiveSpaceIsShown: Bool
@@ -58,44 +59,83 @@ struct ContentView: View {
 }
 
 struct ImmersiveSpaceView: View {
+    @StateObject private var spawner = BubbleSpawner()
+    @StateObject private var hapticManager = HapticFeedbackManager()
+    @State private var rootEntity: Entity?
+    @State private var showDebugOverlay = true
+    @State private var entityCount = 0
+
     var body: some View {
-        RealityView { content in
-            print("🔵 RealityView content closure started")
+        ZStack {
+            RealityView { content in
+                print("🔵 RealityView initializing...")
 
-            BuoyancySystem.registerSystem()
-            OrbitSystem.registerSystem()
-            GestureSystem.registerSystem()
+                BuoyancySystem.registerSystem()
+                OrbitSystem.registerSystem()
+                GestureSystem.registerSystem()
+                BubbleMovementSystem.registerSystem()
 
-            print("✅ Systems registered")
+                print("✅ All systems registered")
 
-            let rootEntity = Entity()
-            rootEntity.name = "BubbleXRoot"
-            content.add(rootEntity)
+                let worldAnchor = AnchorEntity(.world(transform: .identity))
+                worldAnchor.name = "WorldOrigin"
+                content.add(worldAnchor)
 
-            let pointLight = PointLight()
-            pointLight.light.intensity = 1000
-            pointLight.light.attenuationRadius = 5.0
-            pointLight.position = [0, 0.5, -0.5]
-            rootEntity.addChild(pointLight)
+                let root = Entity()
+                root.name = "BubbleXRoot"
+                worldAnchor.addChild(root)
+                rootEntity = root
 
-            print("💡 Light added")
+                let ambientLight = PointLight()
+                ambientLight.light.intensity = 2000
+                ambientLight.light.attenuationRadius = 10.0
+                ambientLight.position = [0, 2, 0]
+                root.addChild(ambientLight)
 
-            Task {
-                print("🔄 Creating bubbles...")
-                for i in 0..<BubbleXConstants.Scene.defaultBubbleCount {
-                    let bubble = await BubbleEntity.create(
-                        position: .randomInZone(
-                            min: BubbleXConstants.Scene.spawnZoneMin,
-                            max: BubbleXConstants.Scene.spawnZoneMax
-                        ),
-                        radius: Float.random(in: BubbleXConstants.Bubble.minRadius...BubbleXConstants.Bubble.maxRadius),
-                        tweetText: "Sample tweet \(i + 1)"
-                    )
-                    print("  ✅ Bubble \(i + 1) created at \(bubble.position)")
-                    rootEntity.addChild(bubble)
+                print("💡 Lighting setup complete")
+
+                setupEntityCountObserver()
+
+                Task {
+                    let userPosition = SIMD3<Float>(0, 1.6, 0)
+
+                    spawner.onBubbleCreated = { [weak root] bubble in
+                        root?.addChild(bubble)
+                        entityCount += 1
+                    }
+
+                    await spawner.startSpawning(userPosition: userPosition)
+                    print("🎬 Bubble spawning started")
                 }
-                print("🎉 All \(BubbleXConstants.Scene.defaultBubbleCount) bubbles created!")
             }
+
+            VStack {
+                HStack {
+                    Spacer()
+                    if showDebugOverlay {
+                        ARDebugOverlay()
+                            .padding()
+                    }
+                }
+                Spacer()
+            }
+        }
+        .onDisappear {
+            spawner.stopSpawning()
+        }
+    }
+
+    private func setupEntityCountObserver() {
+        NotificationCenter.default.addObserver(
+            forName: .requestEntityCount,
+            object: nil,
+            queue: .main
+        ) { _ in
+            NotificationCenter.default.post(
+                name: .updateEntityCount,
+                object: nil,
+                userInfo: ["count": entityCount]
+            )
         }
     }
 }
