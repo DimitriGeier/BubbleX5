@@ -117,8 +117,14 @@ struct ImmersiveSpaceView: View {
                     let recognizer = HandGestureRecognizer()
                     gestureRecognizer = recognizer
 
-                    recognizer.onGestureDetected = { gestureType, chirality, position in
+                    recognizer.onGestureDetected = { [weak spawner] gestureType, chirality, position in
                         print("✋ Gesture callback received: \(gestureType) from \(chirality == .left ? "LEFT" : "RIGHT") hand")
+
+                        if gestureType == .waveToward {
+                            Task {
+                                await handleWaveTowardGesture(spawner: spawner, position: position, root: root)
+                            }
+                        }
                     }
 
                     Task {
@@ -217,6 +223,44 @@ struct ImmersiveSpaceView: View {
                 spawner.stopSpawning()
                 gestureRecognizer?.cleanup()
             }
+        }
+    }
+
+    private func handleWaveTowardGesture(spawner: BubbleSpawner?, position: SIMD3<Float>, root: Entity) async {
+        print("🌊 Wave Toward gesture triggered - fetching tweet and calling Grok API")
+
+        guard let spawner = spawner else { return }
+
+        do {
+            let timeline = try await XAPIClient.shared.fetchHomeTimeline(maxResults: 1)
+
+            guard let latestTweet = timeline.data?.first else {
+                print("❌ No tweets found in timeline")
+                return
+            }
+
+            print("📱 Latest tweet: \(latestTweet.text)")
+
+            let suggestion = try await XAPIClient.shared.summarizeWithGrok(tweetText: latestTweet.text)
+
+            print("✨ Grok Summary: \(suggestion.summary)")
+            print("🔍 Queries: \(suggestion.queries)")
+
+            for (index, query) in suggestion.queries.enumerated() {
+                let offset: Float = Float(index - 1) * 0.4
+                let spawnPosition = SIMD3<Float>(
+                    position.x + offset,
+                    position.y,
+                    position.z - 0.5
+                )
+
+                let bubble = spawner.createBubble(at: spawnPosition, targetPosition: spawnPosition, tweetText: query)
+                root.addChild(bubble)
+                print("🫧 Spawned bubble \(index + 1) with query: \(query)")
+            }
+
+        } catch {
+            print("❌ Error handling wave toward gesture: \(error)")
         }
     }
 
