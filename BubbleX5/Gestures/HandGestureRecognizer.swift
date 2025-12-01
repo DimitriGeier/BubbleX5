@@ -48,25 +48,36 @@ class HandGestureRecognizer: @unchecked Sendable {
     }
 
     private func setupHandTracking() {
+        print("👋 Setting up hand tracking...")
         arkitSession = ARKitSession()
         handTracking = HandTrackingProvider()
 
         Task {
             do {
                 if HandTrackingProvider.isSupported {
+                    print("✅ Hand tracking is supported, starting session...")
                     try await arkitSession?.run([handTracking!])
+                    print("✅ Hand tracking session started successfully")
+                } else {
+                    print("❌ Hand tracking is NOT supported on this device")
                 }
             } catch {
-                print("Hand tracking setup error: \(error)")
+                print("❌ Hand tracking setup error: \(error)")
             }
         }
     }
 
     func updateGestures() async {
-        guard let handTracking = handTracking else { return }
+        guard let handTracking = handTracking else {
+            print("❌ No hand tracking provider available")
+            return
+        }
+
+        print("👋 Starting gesture update loop...")
 
         for await update in handTracking.anchorUpdates {
             let anchor = update.anchor
+            print("👋 Hand anchor update: \(update.event) - \(anchor.chirality == .left ? "LEFT" : "RIGHT") hand")
 
             switch update.event {
             case .added, .updated:

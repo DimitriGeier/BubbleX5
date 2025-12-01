@@ -11,7 +11,7 @@ class BubbleSpawner: ObservableObject {
     private var spawnInterval: TimeInterval = 3.0
 
     @Published var isSpawning = false
-    @Published var spawnedCount = 0
+    private(set) var spawnedCount = 0
 
     var onBubbleCreated: ((BubbleEntity) -> Void)?
 
@@ -71,9 +71,9 @@ class BubbleSpawner: ObservableObject {
         )
         bubble.components.set(movementComponent)
 
-        onBubbleCreated?(bubble)
-
         spawnedCount += 1
+
+        onBubbleCreated?(bubble)
 
         NotificationCenter.default.post(name: .bubbleSpawned, object: nil)
 
