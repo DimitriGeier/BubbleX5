@@ -1,5 +1,6 @@
 import Foundation
 import RealityKit
+import SwiftUI
 
 struct BubbleXConstants {
 

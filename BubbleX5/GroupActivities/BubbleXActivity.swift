@@ -1,5 +1,6 @@
 import GroupActivities
 import Foundation
+import Combine
 
 struct BubbleXActivity: GroupActivity {
     static let activityIdentifier = "com.bubblex.shareplay"
@@ -88,22 +89,19 @@ class SharePlayManager: ObservableObject {
 
 struct BubbleUpdate: Codable {
     let bubbleId: String
-    let position: SIMD3<Float>
-}
+    let positionX: Float
+    let positionY: Float
+    let positionZ: Float
 
-extension SIMD3: Codable where Scalar: Codable {
-    public init(from decoder: Decoder) throws {
-        var container = try decoder.unkeyedContainer()
-        let x = try container.decode(Scalar.self)
-        let y = try container.decode(Scalar.self)
-        let z = try container.decode(Scalar.self)
-        self.init(x, y, z)
+    init(bubbleId: String, position: SIMD3<Float>) {
+        self.bubbleId = bubbleId
+        self.positionX = position.x
+        self.positionY = position.y
+        self.positionZ = position.z
     }
 
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.unkeyedContainer()
-        try container.encode(self.x)
-        try container.encode(self.y)
-        try container.encode(self.z)
+    var position: SIMD3<Float> {
+        SIMD3<Float>(positionX, positionY, positionZ)
     }
 }
+

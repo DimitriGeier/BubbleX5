@@ -33,6 +33,6 @@ struct BubbleXApp: App {
         }
 
         Logger.app.info("BubbleX initialized successfully")
-        Logger.app.debug(Logger.Message(stringLiteral: VisionOSConfiguration.features.debugDescription))
+        Logger.app.debug("\(VisionOSConfiguration.features.debugDescription)")
     }
 }
