@@ -34,7 +34,7 @@ class BubbleEntity: Entity, @unchecked Sendable {
             tint: .init(
                 hue: Double.random(in: 0...1),
                 saturation: 0.7,
-                brightness: 0.9
+                brightness: 0.9, alpha: 1.0
             )
         )
         material.roughness = .init(floatLiteral: BubbleXConstants.Bubble.defaultRoughness)

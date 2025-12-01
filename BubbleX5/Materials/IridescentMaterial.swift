@@ -3,14 +3,14 @@ import SwiftUI
 
 struct IridescentMaterial {
 
-    static func create(baseHue: Double = 0.6) -> Material {
+    static func create(baseHue: Double = 0.6) -> RealityKit.Material {
         var material = PhysicallyBasedMaterial()
 
         material.baseColor = .init(
             tint: .init(
                 hue: baseHue,
                 saturation: 0.8,
-                brightness: 0.95
+                brightness: 0.95, alpha: 1.0
             )
         )
 
@@ -26,7 +26,7 @@ struct IridescentMaterial {
             color: .init(
                 hue: baseHue,
                 saturation: 0.6,
-                brightness: 0.4
+                brightness: 0.4, alpha: 1.0
             )
         )
         material.emissiveIntensity = 0.3
@@ -34,13 +34,13 @@ struct IridescentMaterial {
         return material
     }
 
-    static func createShimmering(phase: Float = 0.0) -> Material {
+    static func createShimmering(phase: Float = 0.0) -> RealityKit.Material {
         let hue = Double((sin(phase) + 1.0) / 2.0)
         return create(baseHue: hue)
     }
 
-    static func rainbow() -> [Material] {
-        var materials: [Material] = []
+    static func rainbow() -> [RealityKit.Material] {
+        var materials: [RealityKit.Material] = []
 
         for i in 0..<7 {
             let hue = Double(i) / 7.0
