@@ -27,11 +27,7 @@ struct BuoyancySystem: System {
 
 extension BuoyancySystem {
     static func registerSystem() {
-        BuoyancySystemComponent.registerComponent()
-        SystemRegistration.register(BuoyancySystem.self)
+        BuoyancyComponent.registerComponent()
+        DraggableComponent.registerComponent()
     }
-}
-
-struct BuoyancySystemComponent: Component {
-
 }

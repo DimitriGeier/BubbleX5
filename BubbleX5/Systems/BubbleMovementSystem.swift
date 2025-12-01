@@ -48,12 +48,10 @@ struct BubbleMovementSystem: System {
 
 extension BubbleMovementSystem {
     static func registerSystem() {
-        BubbleMovementSystemComponent.registerComponent()
-        SystemRegistration.register(BubbleMovementSystem.self)
+        BubbleMovementComponent.registerComponent()
+        OrbitComponent.registerComponent()
     }
 }
-
-struct BubbleMovementSystemComponent: Component {}
 
 extension Notification.Name {
     static let bubbleEnteredOrbit = Notification.Name("bubbleEnteredOrbit")

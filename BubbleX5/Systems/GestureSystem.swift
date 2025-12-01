@@ -56,11 +56,6 @@ struct GestureSystem: System {
 
 extension GestureSystem {
     static func registerSystem() {
-        GestureSystemComponent.registerComponent()
-        SystemRegistration.register(GestureSystem.self)
+        DraggableComponent.registerComponent()
     }
-}
-
-struct GestureSystemComponent: Component {
-
 }
