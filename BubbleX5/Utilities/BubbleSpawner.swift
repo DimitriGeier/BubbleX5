@@ -5,9 +5,9 @@ import Combine
 
 @MainActor
 class BubbleSpawner: ObservableObject {
-    private let xApiClient = XAPIClient()
+    private let xApiClient = XAPIClient.shared
     private var spawnTimer: Timer?
-    private var tweetQueue: [Tweet] = []
+    private var tweetQueue: [XTweet] = []
     private var spawnInterval: TimeInterval = 3.0
 
     @Published var isSpawning = false
@@ -36,10 +36,9 @@ class BubbleSpawner: ObservableObject {
 
     private func loadTweets() async {
         do {
-            let userId = "44196397"
-            let tweets = try await xApiClient.fetchTimeline(userId: userId, maxResults: 20)
-            tweetQueue = tweets
-            print("✅ Loaded \(tweets.count) tweets")
+            let response = try await xApiClient.fetchHomeTimeline(maxResults: 20)
+            tweetQueue = response.data ?? []
+            print("✅ Loaded \(tweetQueue.count) tweets")
         } catch {
             print("⚠️ Failed to load tweets: \(error). Using sample data.")
             tweetQueue = generateSampleTweets()
@@ -81,15 +80,62 @@ class BubbleSpawner: ObservableObject {
         print("   Distance to target: \(length(userPosition - spawnPosition))")
     }
 
-    private func generateSampleTweets() -> [Tweet] {
+    private func generateSampleTweets() -> [XTweet] {
         return (1...20).map { i in
-            Tweet(
+            XTweet(
                 id: "\(i)",
                 text: "Sample tweet #\(i): This is a test message for BubbleX AR experience",
                 authorId: "sample_user",
                 createdAt: ISO8601DateFormatter().string(from: Date())
             )
         }
+    }
+
+    func createBubble(at position: SIMD3<Float>, targetPosition: SIMD3<Float>, tweetText: String) -> BubbleEntity {
+        let bubble = BubbleEntity()
+        bubble.position = position
+
+        let radius = Float.random(in: BubbleXConstants.Bubble.minRadius...BubbleXConstants.Bubble.maxRadius)
+
+        let sphereMesh = MeshResource.generateSphere(radius: radius)
+        let material = IridescentMaterial.create()
+
+        let modelComponent = ModelComponent(
+            mesh: sphereMesh,
+            materials: [material]
+        )
+
+        bubble.components.set(modelComponent)
+
+        let textLabel = bubble.addTextLabel()
+        textLabel.position = [0, radius + 0.05, 0]
+        bubble.addChild(textLabel)
+
+        let movementComponent = BubbleMovementComponent(
+            targetPosition: targetPosition,
+            speed: 0.075
+        )
+        bubble.components.set(movementComponent)
+
+        let buoyancyComponent = BuoyancyComponent(
+            amplitude: BubbleXConstants.Buoyancy.amplitude,
+            frequency: BubbleXConstants.Buoyancy.frequency,
+            phase: Float.random(in: 0...(2 * .pi))
+        )
+        bubble.components.set(buoyancyComponent)
+
+        let orbitComponent = OrbitComponent(
+            orbitRadius: BubbleXConstants.Orbit.defaultRadius,
+            orbitSpeed: BubbleXConstants.Orbit.defaultSpeed,
+            orbitAxis: SIMD3<Float>(0, 1, 0),
+            currentAngle: Float.random(in: 0...(2 * .pi))
+        )
+        bubble.components.set(orbitComponent)
+
+        spawnedCount += 1
+        print("🫧 Created bubble #\(spawnedCount) with text: \(tweetText)")
+
+        return bubble
     }
 
     deinit {
