@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>com.apple.developer.arkit.hand-tracking</key>
+	<true/>
+	<key>com.apple.developer.arkit.world-sensing</key>
+	<true/>
+	<key>com.apple.developer.arkit.scene-understanding</key>
+	<true/>
+	<key>com.apple.developer.arkit.plane-detection</key>
+	<array>
+		<string>horizontal</string>
+		<string>vertical</string>
+	</array>
+	<key>com.apple.developer.group-session</key>
+	<true/>
+	<key>com.apple.developer.usernotifications.time-sensitive</key>
+	<true/>
+	<key>com.apple.security.app-sandbox</key>
+	<true/>
+	<key>com.apple.security.network.client</key>
+	<true/>
+</dict>
+</plist>

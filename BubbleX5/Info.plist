@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>BubbleX uses the camera for passthrough AR experiences, allowing you to see floating content in your environment.</string>
+	<key>NSHandsTrackingUsageDescription</key>
+	<string>BubbleX uses hand tracking to enable natural gesture interactions with AR bubbles.</string>
+	<key>NSWorldSensingUsageDescription</key>
+	<string>BubbleX uses world sensing to place and anchor AR content in your environment.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationPreferredDefaultSceneSessionRole</key>
@@ -11,5 +17,13 @@
 		<key>UISceneConfigurations</key>
 		<dict/>
 	</dict>
+	<key>UIRequiredDeviceCapabilities</key>
+	<array>
+		<string>arm64</string>
+	</array>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>processing</string>
+	</array>
 </dict>
 </plist>
