@@ -1,5 +1,6 @@
 import RealityKit
 import ARKit
+import QuartzCore
 
 @MainActor
 class HandGestureRecognizer: @unchecked Sendable {
@@ -65,9 +66,10 @@ class HandGestureRecognizer: @unchecked Sendable {
         guard let handTracking = handTracking else { return }
 
         for await update in handTracking.anchorUpdates {
+            let anchor = update.anchor
+
             switch update.event {
             case .added, .updated:
-                let anchor = update.anchor
                 processHandAnchor(anchor)
 
             case .removed:
@@ -83,12 +85,10 @@ class HandGestureRecognizer: @unchecked Sendable {
     private func processHandAnchor(_ anchor: HandAnchor) {
         guard let skeleton = anchor.handSkeleton else { return }
 
-        guard let wrist = skeleton.joint(.wrist),
-              let middleMetacarpal = skeleton.joint(.middleFingerMetacarpal),
-              let indexTip = skeleton.joint(.indexFingerTip),
-              let indexKnuckle = skeleton.joint(.indexFingerKnuckle) else {
-            return
-        }
+        let wrist = skeleton.joint(.wrist)
+        let middleMetacarpal = skeleton.joint(.middleFingerMetacarpal)
+        let indexTip = skeleton.joint(.indexFingerTip)
+        let indexKnuckle = skeleton.joint(.indexFingerKnuckle)
 
         let wristPos = extractPosition(from: wrist.anchorFromJointTransform)
         let palmPos = extractPosition(from: middleMetacarpal.anchorFromJointTransform)
