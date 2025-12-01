@@ -195,6 +195,23 @@ class HandGestureRecognizer: @unchecked Sendable {
     }
 
     private func triggerGesture(_ gesture: GestureType, chirality: HandAnchor.Chirality, position: SIMD3<Float>) {
+        let handString = chirality == .left ? "LEFT" : "RIGHT"
+
+        switch gesture {
+        case .waveLeft:
+            print("🤚 WAVE LEFT detected - \(handString) hand at position: \(position)")
+        case .waveRight:
+            print("🤚 WAVE RIGHT detected - \(handString) hand at position: \(position)")
+        case .waveAway:
+            print("🤚 WAVE AWAY detected - \(handString) hand at position: \(position)")
+        case .waveToward:
+            print("🤚 WAVE TOWARD detected - \(handString) hand at position: \(position)")
+        case .fingerBeckon:
+            print("🤚 FINGER BECKON detected - \(handString) hand at position: \(position)")
+        case .unknown:
+            print("🤚 UNKNOWN gesture - \(handString) hand")
+        }
+
         onGestureDetected?(gesture, chirality, position)
 
         NotificationCenter.default.post(
