@@ -77,7 +77,6 @@ class HandGestureRecognizer: @unchecked Sendable {
 
         for await update in handTracking.anchorUpdates {
             let anchor = update.anchor
-            print("👋 Hand anchor update: \(update.event) - \(anchor.chirality == .left ? "LEFT" : "RIGHT") hand")
 
             switch update.event {
             case .added, .updated:
@@ -100,14 +99,17 @@ class HandGestureRecognizer: @unchecked Sendable {
         let middleMetacarpal = skeleton.joint(.middleFingerMetacarpal)
         let indexTip = skeleton.joint(.indexFingerTip)
         let indexKnuckle = skeleton.joint(.indexFingerKnuckle)
+        let thumbTip = skeleton.joint(.thumbTip)
 
         let wristPos = extractPosition(from: wrist.anchorFromJointTransform)
         let palmPos = extractPosition(from: middleMetacarpal.anchorFromJointTransform)
         let indexTipPos = extractPosition(from: indexTip.anchorFromJointTransform)
         let indexKnucklePos = extractPosition(from: indexKnuckle.anchorFromJointTransform)
+        let thumbTipPos = extractPosition(from: thumbTip.anchorFromJointTransform)
 
-        let palmToWrist = normalize(wristPos - palmPos)
-        let palmNormal = palmToWrist
+        let palmToFingers = normalize(indexTipPos - palmPos)
+        let palmToThumb = normalize(thumbTipPos - palmPos)
+        let palmNormal = normalize(cross(palmToFingers, palmToThumb))
 
         let currentTime = CACurrentMediaTime()
 
@@ -146,48 +148,24 @@ class HandGestureRecognizer: @unchecked Sendable {
     }
 
     private func detectGestures(handState: HandState) {
-        let palmNormal = handState.palmNormal
         let velocity = handState.velocity
         let speed = length(velocity)
 
-        let handSide = handState.chirality == .left ? "LEFT" : "RIGHT"
+        guard speed > 0.1 else { return }
 
-        let forwardDot = dot(palmNormal, SIMD3<Float>(0, 0, -1))
-        let isPalmForward = forwardDot > 0.5
+        let leftVelocity = dot(velocity, SIMD3<Float>(-1, 0, 0))
+        let rightVelocity = dot(velocity, SIMD3<Float>(1, 0, 0))
+        let awayVelocity = dot(velocity, SIMD3<Float>(0, 0, -1))
+        let towardVelocity = dot(velocity, SIMD3<Float>(0, 0, 1))
 
-        let cameraDot = dot(palmNormal, SIMD3<Float>(0, 0, 1))
-        let isPalmTowardCamera = cameraDot > 0.5
-
-        print("[\(handSide)] Speed: \(String(format: "%.3f", speed)), PalmForward: \(isPalmForward), PalmTowardCam: \(isPalmTowardCamera)")
-
-        if isPalmForward && speed > velocityThreshold {
-            let leftVelocity = dot(velocity, SIMD3<Float>(-1, 0, 0))
-            let rightVelocity = dot(velocity, SIMD3<Float>(1, 0, 0))
-
-            print("[\(handSide)] LeftVel: \(String(format: "%.3f", leftVelocity)), RightVel: \(String(format: "%.3f", rightVelocity))")
-
-            if leftVelocity > velocityThreshold {
-                print("✅ WAVE TO LEFT DETECTED - \(handSide) hand")
-                triggerGesture(.waveLeft, chirality: handState.chirality, position: handState.palmPosition)
-            } else if rightVelocity > velocityThreshold {
-                print("✅ WAVE TO RIGHT DETECTED - \(handSide) hand")
-                triggerGesture(.waveRight, chirality: handState.chirality, position: handState.palmPosition)
-            }
-        }
-
-        if isPalmTowardCamera {
-            let awayVelocity = dot(velocity, SIMD3<Float>(0, 0, -1))
-            let towardVelocity = dot(velocity, SIMD3<Float>(0, 0, 1))
-
-            print("[\(handSide)] AwayVel: \(String(format: "%.3f", awayVelocity)), TowardVel: \(String(format: "%.3f", towardVelocity))")
-
-            if awayVelocity > waveAwayThreshold {
-                print("✅ WAVE AWAY DETECTED - \(handSide) hand")
-                triggerGesture(.waveAway, chirality: handState.chirality, position: handState.palmPosition)
-            } else if towardVelocity > waveTowardThreshold {
-                print("✅ WAVE TOWARD DETECTED - \(handSide) hand")
-                triggerGesture(.waveToward, chirality: handState.chirality, position: handState.palmPosition)
-            }
+        if leftVelocity > velocityThreshold {
+            triggerGesture(.waveLeft, chirality: handState.chirality, position: handState.palmPosition)
+        } else if rightVelocity > velocityThreshold {
+            triggerGesture(.waveRight, chirality: handState.chirality, position: handState.palmPosition)
+        } else if awayVelocity > waveAwayThreshold {
+            triggerGesture(.waveAway, chirality: handState.chirality, position: handState.palmPosition)
+        } else if towardVelocity > waveTowardThreshold {
+            triggerGesture(.waveToward, chirality: handState.chirality, position: handState.palmPosition)
         }
 
         detectFingerBeckon(handState: handState)
@@ -222,11 +200,11 @@ class HandGestureRecognizer: @unchecked Sendable {
 
         switch gesture {
         case .waveLeft:
-            print("🤚 WAVE LEFT detected - \(handString) hand at position: \(position)")
+            print("✅ WAVE LEFT DETECTED - \(handString) hand")
         case .waveRight:
-            print("🤚 WAVE RIGHT detected - \(handString) hand at position: \(position)")
+            print("✅ WAVE RIGHT DETECTED - \(handString) hand")
         case .waveAway:
-            print("🤚 WAVE AWAY detected - \(handString) hand at position: \(position)")
+            print("✅ WAVE AWAY DETECTED - \(handString) hand")
         case .waveToward:
             print("🤚 WAVE TOWARD detected - \(handString) hand at position: \(position)")
         case .fingerBeckon:
