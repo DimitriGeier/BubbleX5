@@ -141,7 +141,7 @@ struct ImmersiveSpaceView: View {
 
                             let orbitCenter = movement.targetPosition
                             let orbitRadius: Float = 2.0
-                            let orbitSpeed: Float = (2.0 * .pi) / 15.0
+                            let orbitSpeed: Float = -((2.0 * .pi) / 30.0)
 
                             let startAngle = atan2(entity.position.z - orbitCenter.z, entity.position.x - orbitCenter.x)
 

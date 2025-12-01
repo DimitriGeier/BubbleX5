@@ -117,7 +117,7 @@ class BubbleEntity: Entity, @unchecked Sendable {
     func updateTextOrbit(deltaTime: Float) {
         guard let container = textRingContainer else { return }
 
-        textOrbitAngle += 0.3 * deltaTime
+        textOrbitAngle += 0.15 * deltaTime
 
         container.orientation = simd_quatf(angle: textOrbitAngle, axis: [0, 1, 0])
     }
