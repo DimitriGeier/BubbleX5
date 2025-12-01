@@ -68,6 +68,9 @@ class BubbleEntity: Entity, @unchecked Sendable {
         let billboard = BillboardComponent()
         bubble.components.set(billboard)
 
+        let gestureComponent = GestureComponent(canDrag: true, canScale: false, canRotate: false)
+        bubble.components.set(gestureComponent)
+
         return bubble
     }
 
