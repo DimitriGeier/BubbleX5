@@ -29,6 +29,9 @@ class BubbleSpawner: ObservableObject {
         await loadTweets()
         print("📚 [BubbleSpawner] Tweets loaded, queue size: \(tweetQueue.count)")
 
+        print("🎬 [BubbleSpawner] Spawning first bubble immediately...")
+        await spawnNextBubble(userPosition: userPosition)
+
         spawnTimer = Timer.scheduledTimer(withTimeInterval: spawnInterval, repeats: true) { [weak self] _ in
             Task { @MainActor in
                 await self?.spawnNextBubble(userPosition: userPosition)
@@ -79,7 +82,12 @@ class BubbleSpawner: ObservableObject {
         let tweet = tweetQueue.removeFirst()
         print("📝 [BubbleSpawner] Spawning bubble for tweet: \(tweet.text.prefix(50))...")
 
-        let spawnPosition = userPosition + SIMD3<Float>(0, 0, -5.0)
+        let randomOffset = SIMD3<Float>(
+            Float.random(in: -0.5...0.5),
+            Float.random(in: -0.3...0.3),
+            Float.random(in: -2.0...(-1.0))
+        )
+        let spawnPosition = userPosition + randomOffset
         print("📍 [BubbleSpawner] Spawn position: \(spawnPosition), user position: \(userPosition)")
 
         let bubble = await BubbleEntity.create(

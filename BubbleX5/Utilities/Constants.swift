@@ -5,9 +5,9 @@ import SwiftUI
 struct BubbleXConstants {
 
     struct Bubble {
-        static let minRadius: Float = 0.05
-        static let maxRadius: Float = 0.2
-        static let defaultRadius: Float = 0.1
+        static let minRadius: Float = 0.1
+        static let maxRadius: Float = 0.3
+        static let defaultRadius: Float = 0.2
 
         static let minBuoyancyAmplitude: Float = 0.03
         static let maxBuoyancyAmplitude: Float = 0.2
@@ -15,7 +15,7 @@ struct BubbleXConstants {
         static let minBuoyancyFrequency: Float = 0.3
         static let maxBuoyancyFrequency: Float = 2.0
 
-        static let defaultOpacity: Float = 0.65
+        static let defaultOpacity: Float = 0.85
         static let defaultRoughness: Float = 0.1
         static let defaultMetallic: Float = 0.8
     }

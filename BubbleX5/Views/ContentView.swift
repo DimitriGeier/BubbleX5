@@ -92,12 +92,18 @@ struct ImmersiveSpaceView: View {
                 rootEntity = root
 
                 let ambientLight = PointLight()
-                ambientLight.light.intensity = 2000
-                ambientLight.light.attenuationRadius = 10.0
+                ambientLight.light.intensity = 5000
+                ambientLight.light.attenuationRadius = 20.0
                 ambientLight.position = [0, 2, 0]
                 root.addChild(ambientLight)
 
-                print("💡 Lighting setup complete")
+                let frontLight = PointLight()
+                frontLight.light.intensity = 3000
+                frontLight.light.attenuationRadius = 15.0
+                frontLight.position = [0, 1.6, -2]
+                root.addChild(frontLight)
+
+                print("💡 Lighting setup complete - 2 lights added")
 
                 setupEntityCountObserver()
 

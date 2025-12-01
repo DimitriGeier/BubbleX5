@@ -65,7 +65,7 @@ class XAPIClient: ObservableObject {
 
         var components = URLComponents(string: "\(baseURL)/tweets/search/recent")
         components?.queryItems = [
-            URLQueryItem(name: "query", value: "from:me"),
+            URLQueryItem(name: "query", value: "visionOS OR spatial computing OR Apple Vision Pro -is:retweet"),
             URLQueryItem(name: "max_results", value: "\(maxResults)"),
             URLQueryItem(name: "tweet.fields", value: "created_at,author_id"),
             URLQueryItem(name: "expansions", value: "author_id"),
