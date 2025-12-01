@@ -150,19 +150,27 @@ class HandGestureRecognizer: @unchecked Sendable {
         let velocity = handState.velocity
         let speed = length(velocity)
 
+        let handSide = handState.chirality == .left ? "LEFT" : "RIGHT"
+
         let forwardDot = dot(palmNormal, SIMD3<Float>(0, 0, -1))
         let isPalmForward = forwardDot > 0.5
 
         let cameraDot = dot(palmNormal, SIMD3<Float>(0, 0, 1))
         let isPalmTowardCamera = cameraDot > 0.5
 
+        print("[\(handSide)] Speed: \(String(format: "%.3f", speed)), PalmForward: \(isPalmForward), PalmTowardCam: \(isPalmTowardCamera)")
+
         if isPalmForward && speed > velocityThreshold {
             let leftVelocity = dot(velocity, SIMD3<Float>(-1, 0, 0))
             let rightVelocity = dot(velocity, SIMD3<Float>(1, 0, 0))
 
+            print("[\(handSide)] LeftVel: \(String(format: "%.3f", leftVelocity)), RightVel: \(String(format: "%.3f", rightVelocity))")
+
             if leftVelocity > velocityThreshold {
+                print("✅ WAVE TO LEFT DETECTED - \(handSide) hand")
                 triggerGesture(.waveLeft, chirality: handState.chirality, position: handState.palmPosition)
             } else if rightVelocity > velocityThreshold {
+                print("✅ WAVE TO RIGHT DETECTED - \(handSide) hand")
                 triggerGesture(.waveRight, chirality: handState.chirality, position: handState.palmPosition)
             }
         }
@@ -171,9 +179,13 @@ class HandGestureRecognizer: @unchecked Sendable {
             let awayVelocity = dot(velocity, SIMD3<Float>(0, 0, -1))
             let towardVelocity = dot(velocity, SIMD3<Float>(0, 0, 1))
 
+            print("[\(handSide)] AwayVel: \(String(format: "%.3f", awayVelocity)), TowardVel: \(String(format: "%.3f", towardVelocity))")
+
             if awayVelocity > waveAwayThreshold {
+                print("✅ WAVE AWAY DETECTED - \(handSide) hand")
                 triggerGesture(.waveAway, chirality: handState.chirality, position: handState.palmPosition)
             } else if towardVelocity > waveTowardThreshold {
+                print("✅ WAVE TOWARD DETECTED - \(handSide) hand")
                 triggerGesture(.waveToward, chirality: handState.chirality, position: handState.palmPosition)
             }
         }

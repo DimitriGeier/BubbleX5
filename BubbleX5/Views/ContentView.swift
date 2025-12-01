@@ -134,7 +134,10 @@ struct ImmersiveSpaceView: View {
                 } else {
                     deltaTime = 1.0 / 60.0
                 }
-                lastUpdateTime = now
+
+                DispatchQueue.main.async {
+                    lastUpdateTime = now
+                }
 
                 for entity in root.children {
                     guard let entity = entity as? BubbleEntity else { continue }
