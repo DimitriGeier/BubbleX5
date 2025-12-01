@@ -1,5 +1,6 @@
 import SwiftUI
 import RealityKit
+import Combine
 
 struct ARDebugOverlay: View {
     @State private var fps: Double = 0
