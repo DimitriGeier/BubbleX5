@@ -123,6 +123,9 @@ struct ImmersiveSpaceView: View {
 
                 for entity in root.children {
                     guard let entity = entity as? BubbleEntity else { continue }
+
+                    entity.updateTextOrbit(deltaTime: deltaTime)
+
                     guard var movement = entity.components[BubbleMovementComponent.self] else { continue }
 
                     if movement.isApproaching && !movement.hasReachedOrbit {

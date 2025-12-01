@@ -6,6 +6,8 @@ class BubbleEntity: Entity, @unchecked Sendable {
     var radius: Float
     var tweetText: String
     var velocity: SIMD3<Float> = .zero
+    var textOrbitAngle: Float = 0.0
+    var textEntity: Entity?
 
     required init() {
         self.radius = BubbleXConstants.Bubble.defaultRadius
@@ -71,7 +73,8 @@ class BubbleEntity: Entity, @unchecked Sendable {
 
     func addTextLabel() -> Entity {
         let textEntity = Entity()
-        textEntity.position = [0, radius + 0.05, 0]
+        let orbitRadius = radius + 0.15
+        textEntity.position = [orbitRadius, 0, 0]
 
         let textMesh = MeshResource.generateText(
             tweetText,
@@ -88,6 +91,20 @@ class BubbleEntity: Entity, @unchecked Sendable {
         textEntity.components.set(ModelComponent(mesh: textMesh, materials: [textMaterial]))
         textEntity.components.set(BillboardComponent())
 
+        self.textEntity = textEntity
+
         return textEntity
+    }
+
+    func updateTextOrbit(deltaTime: Float) {
+        guard let textEntity = textEntity else { return }
+
+        textOrbitAngle += 0.5 * deltaTime
+
+        let orbitRadius = radius + 0.15
+        let x = orbitRadius * cos(textOrbitAngle)
+        let z = orbitRadius * sin(textOrbitAngle)
+
+        textEntity.position = [x, 0, z]
     }
 }
