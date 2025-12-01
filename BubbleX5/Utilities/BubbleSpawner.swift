@@ -118,17 +118,17 @@ class BubbleSpawner: ObservableObject {
         bubble.components.set(movementComponent)
 
         let buoyancyComponent = BuoyancyComponent(
-            amplitude: BubbleXConstants.Buoyancy.amplitude,
-            frequency: BubbleXConstants.Buoyancy.frequency,
+            amplitude: Float.random(in: BubbleXConstants.Bubble.minBuoyancyAmplitude...BubbleXConstants.Bubble.maxBuoyancyAmplitude),
+            frequency: Float.random(in: BubbleXConstants.Bubble.minBuoyancyFrequency...BubbleXConstants.Bubble.maxBuoyancyFrequency),
             phase: Float.random(in: 0...(2 * .pi))
         )
         bubble.components.set(buoyancyComponent)
 
         let orbitComponent = OrbitComponent(
-            orbitRadius: BubbleXConstants.Orbit.defaultRadius,
-            orbitSpeed: BubbleXConstants.Orbit.defaultSpeed,
-            orbitAxis: SIMD3<Float>(0, 1, 0),
-            currentAngle: Float.random(in: 0...(2 * .pi))
+            center: targetPosition,
+            radius: 0.5,
+            speed: 1.0,
+            angle: Float.random(in: 0...(2 * .pi))
         )
         bubble.components.set(orbitComponent)
 
