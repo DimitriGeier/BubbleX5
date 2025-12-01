@@ -66,6 +66,8 @@ struct ImmersiveSpaceView: View {
     @State private var entityCount = 0
     @State private var lastUpdateTime: Date?
     @State private var gestureRecognizer: HandGestureRecognizer?
+    @State private var grabbedBubble: BubbleEntity?
+    @State private var grabChirality: HandAnchor.Chirality?
 
     var body: some View {
         TimelineView(.animation) { timeline in
@@ -115,8 +117,10 @@ struct ImmersiveSpaceView: View {
                     let recognizer = HandGestureRecognizer()
                     gestureRecognizer = recognizer
 
-                    recognizer.onGestureDetected = { gestureType, chirality, position in
-                        print("✋ Gesture callback received: \(gestureType) from \(chirality == .left ? "LEFT" : "RIGHT") hand")
+                    recognizer.onGestureDetected = { [weak root] gestureType, chirality, position in
+                        Task { @MainActor in
+                            handleGesture(gestureType, chirality: chirality, position: position, root: root)
+                        }
                     }
 
                     Task {
@@ -177,7 +181,14 @@ struct ImmersiveSpaceView: View {
 
                     entity.components[BubbleMovementComponent.self] = movement
 
-                    if var orbit = entity.components[OrbitComponent.self] {
+                    if let grabbed = grabbedBubble, grabbed == entity {
+                        if let recognizer = gestureRecognizer {
+                            let handState = grabChirality == .left ? recognizer.leftHandState : recognizer.rightHandState
+                            if let state = handState {
+                                entity.position = state.indexTipPosition
+                            }
+                        }
+                    } else if var orbit = entity.components[OrbitComponent.self] {
                         orbit.angle += orbit.speed * deltaTime
 
                         let newX = orbit.center.x + orbit.radius * cos(orbit.angle)
@@ -220,5 +231,49 @@ struct ImmersiveSpaceView: View {
                 userInfo: ["count": entityCount]
             )
         }
+    }
+
+    private func handleGesture(_ gestureType: HandGestureRecognizer.GestureType, chirality: HandAnchor.Chirality, position: SIMD3<Float>, root: Entity?) {
+        guard let root = root else { return }
+
+        switch gestureType {
+        case .pinch:
+            if grabbedBubble == nil {
+                let closestBubble = findClosestBubble(to: position, in: root)
+                if let bubble = closestBubble {
+                    grabbedBubble = bubble
+                    grabChirality = chirality
+                    print("🫧 Grabbed bubble at distance: \(distance(bubble.position, position))")
+                }
+            }
+
+        case .pinchEnded:
+            if grabChirality == chirality {
+                if let bubble = grabbedBubble {
+                    print("🫧 Released bubble")
+                }
+                grabbedBubble = nil
+                grabChirality = nil
+            }
+
+        default:
+            break
+        }
+    }
+
+    private func findClosestBubble(to position: SIMD3<Float>, in root: Entity) -> BubbleEntity? {
+        var closestBubble: BubbleEntity?
+        var closestDistance: Float = 0.3
+
+        for entity in root.children {
+            guard let bubble = entity as? BubbleEntity else { continue }
+            let dist = distance(bubble.position, position)
+            if dist < closestDistance {
+                closestDistance = dist
+                closestBubble = bubble
+            }
+        }
+
+        return closestBubble
     }
 }

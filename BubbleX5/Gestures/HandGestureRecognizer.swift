@@ -11,6 +11,8 @@ class HandGestureRecognizer: @unchecked Sendable {
         case waveAway
         case waveToward
         case fingerBeckon
+        case pinch
+        case pinchEnded
         case unknown
     }
 
@@ -19,18 +21,20 @@ class HandGestureRecognizer: @unchecked Sendable {
         var palmNormal: SIMD3<Float>
         var indexTipPosition: SIMD3<Float>
         var indexKnucklePosition: SIMD3<Float>
+        var thumbTipPosition: SIMD3<Float>
         var wristPosition: SIMD3<Float>
         var velocity: SIMD3<Float> = .zero
         var previousPosition: SIMD3<Float>?
         var chirality: HandAnchor.Chirality
         var timestamp: TimeInterval
+        var isPinching: Bool = false
     }
 
     private var arkitSession: ARKitSession?
     private var handTracking: HandTrackingProvider?
 
-    private var leftHandState: HandState?
-    private var rightHandState: HandState?
+    var leftHandState: HandState?
+    var rightHandState: HandState?
 
     private let velocityThreshold: Float = 0.3
     private let waveAwayThreshold: Float = 0.25
@@ -126,17 +130,29 @@ class HandGestureRecognizer: @unchecked Sendable {
             }
         }
 
+        let pinchDistance = distance(indexTipPos, thumbTipPos)
+        let isPinching = pinchDistance < 0.03
+        let wasPinching = anchor.chirality == .left ? leftHandState?.isPinching ?? false : rightHandState?.isPinching ?? false
+
         let handState = HandState(
             palmPosition: palmPos,
             palmNormal: palmNormal,
             indexTipPosition: indexTipPos,
             indexKnucklePosition: indexKnucklePos,
+            thumbTipPosition: thumbTipPos,
             wristPosition: wristPos,
             velocity: velocity,
             previousPosition: anchor.chirality == .left ? leftHandState?.palmPosition : rightHandState?.palmPosition,
             chirality: anchor.chirality,
-            timestamp: currentTime
+            timestamp: currentTime,
+            isPinching: isPinching
         )
+
+        if isPinching && !wasPinching {
+            triggerGesture(.pinch, chirality: anchor.chirality, position: indexTipPos)
+        } else if !isPinching && wasPinching {
+            triggerGesture(.pinchEnded, chirality: anchor.chirality, position: indexTipPos)
+        }
 
         if anchor.chirality == .left {
             leftHandState = handState
@@ -206,11 +222,15 @@ class HandGestureRecognizer: @unchecked Sendable {
         case .waveAway:
             print("✅ WAVE AWAY DETECTED - \(handString) hand")
         case .waveToward:
-            print("🤚 WAVE TOWARD detected - \(handString) hand at position: \(position)")
+            print("✅ WAVE TOWARD DETECTED - \(handString) hand")
         case .fingerBeckon:
-            print("🤚 FINGER BECKON detected - \(handString) hand at position: \(position)")
+            print("✅ FINGER BECKON DETECTED - \(handString) hand")
+        case .pinch:
+            print("✅ PINCH DETECTED - \(handString) hand")
+        case .pinchEnded:
+            print("✅ PINCH ENDED - \(handString) hand")
         case .unknown:
-            print("🤚 UNKNOWN gesture - \(handString) hand")
+            print("✅ UNKNOWN gesture - \(handString) hand")
         }
 
         onGestureDetected?(gesture, chirality, position)
