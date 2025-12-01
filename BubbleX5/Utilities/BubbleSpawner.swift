@@ -67,7 +67,7 @@ class BubbleSpawner: ObservableObject {
 
         let movementComponent = BubbleMovementComponent(
             targetPosition: userPosition,
-            speed: 0.3
+            speed: 0.15
         )
         bubble.components.set(movementComponent)
 

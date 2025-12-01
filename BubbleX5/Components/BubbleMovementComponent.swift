@@ -6,7 +6,7 @@ struct BubbleMovementComponent: Component, Codable, Sendable {
     var isApproaching: Bool
     var hasReachedOrbit: Bool
 
-    init(targetPosition: SIMD3<Float>, speed: Float = 0.3) {
+    init(targetPosition: SIMD3<Float>, speed: Float = 0.15) {
         self.targetPosition = targetPosition
         self.speed = speed
         self.isApproaching = true
