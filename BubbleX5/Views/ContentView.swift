@@ -65,6 +65,7 @@ struct ImmersiveSpaceView: View {
     @State private var showDebugOverlay = true
     @State private var entityCount = 0
     @State private var lastUpdateTime: Date?
+    @State private var gestureRecognizer: HandGestureRecognizer?
 
     var body: some View {
         TimelineView(.animation) { timeline in
@@ -103,11 +104,25 @@ struct ImmersiveSpaceView: View {
 
                     spawner.onBubbleCreated = { [weak root] bubble in
                         root?.addChild(bubble)
-                        entityCount += 1
+                        Task { @MainActor in
+                            entityCount += 1
+                        }
                     }
 
                     await spawner.startSpawning(userPosition: userPosition)
                     print("🎬 Bubble spawning started")
+
+                    let recognizer = HandGestureRecognizer()
+                    gestureRecognizer = recognizer
+
+                    recognizer.onGestureDetected = { gestureType, chirality, position in
+                        print("✋ Gesture callback received: \(gestureType) from \(chirality == .left ? "LEFT" : "RIGHT") hand")
+                    }
+
+                    Task {
+                        await recognizer.updateGestures()
+                    }
+                    print("✋ Hand gesture recognition started")
                 }
             } update: { content in
                 guard let root = rootEntity else { return }
@@ -185,6 +200,7 @@ struct ImmersiveSpaceView: View {
             }
             .onDisappear {
                 spawner.stopSpawning()
+                gestureRecognizer?.cleanup()
             }
         }
     }
