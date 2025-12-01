@@ -77,7 +77,8 @@ class BubbleSpawner: ObservableObject {
 
         NotificationCenter.default.post(name: .bubbleSpawned, object: nil)
 
-        print("🫧 Spawned bubble #\(spawnedCount): \(tweet.text.prefix(30))...")
+        print("🫧 Spawned bubble #\(spawnedCount) at \(spawnPosition) -> target: \(userPosition)")
+        print("   Distance to target: \(length(userPosition - spawnPosition))")
     }
 
     private func generateSampleTweets() -> [Tweet] {

@@ -64,10 +64,12 @@ struct ImmersiveSpaceView: View {
     @State private var rootEntity: Entity?
     @State private var showDebugOverlay = true
     @State private var entityCount = 0
+    @State private var lastUpdateTime: Date?
 
     var body: some View {
-        ZStack {
-            RealityView { content in
+        TimelineView(.animation) { timeline in
+            ZStack {
+                RealityView { content in
                 print("🔵 RealityView initializing...")
 
                 BubbleMovementComponent.registerComponent()
@@ -110,7 +112,14 @@ struct ImmersiveSpaceView: View {
             } update: { content in
                 guard let root = rootEntity else { return }
 
-                let deltaTime: Float = 1.0 / 60.0
+                let now = timeline.date
+                let deltaTime: Float
+                if let last = lastUpdateTime {
+                    deltaTime = Float(now.timeIntervalSince(last))
+                } else {
+                    deltaTime = 1.0 / 60.0
+                }
+                lastUpdateTime = now
 
                 for entity in root.children {
                     guard let entity = entity as? BubbleEntity else { continue }
@@ -170,9 +179,10 @@ struct ImmersiveSpaceView: View {
                 }
                 Spacer()
             }
-        }
-        .onDisappear {
-            spawner.stopSpawning()
+            }
+            .onDisappear {
+                spawner.stopSpawning()
+            }
         }
     }
 
